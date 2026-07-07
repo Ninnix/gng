@@ -1,26 +1,29 @@
-Create new Env
-Create conda environment:
+Create a virtual environment named `protogq`:
 
-conda create -n duckmind python=3.12
+```bash
+uv python install 3.13
+uv venv --python 3.13 protogq
+source protogq/bin/activate
+pip install -e .
+```
 
-Enable environment
+On Windows:
 
-conda activate duckmind
+```powershell
+uv python install 3.13
+uv venv --python 3.13 protogq
+protogq\Scripts\activate
+pip install -e .
+```
 
-Install requirements
+Set the Groq API key:
 
-pip3 install -r requirements.txt
+```bash
+export GROQ_API_KEY="your-api-key"
+```
 
-set env in IDE
+On Windows PowerShell:
 
-VENV
-
-create venv environment:
-
-python3 -m venv duckmind
-
-Enable environment
-
-source duckmind/bin/activate (on windows duckmind\Scripts\activate)
-
-pip install -r requirements.txt
+```powershell
+$env:GROQ_API_KEY = "your-api-key"
+```

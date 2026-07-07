@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "protogq"
+version = "0.1.0"
+description = "Groq/OpenAI-compatible prototyping helper with pure Python web access"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.13"
+authors = [
+    { name = "protogq contributors" },
+]
+keywords = [
+    "groq", "openai-compatible", "llm", "web", "chrome", "cdp",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "openai>=2.44.0",
+]
+
+[project.scripts]
+protogq = "protogq.main:main"
+
+[project.urls]
+Homepage = "https://github.com/nicolo/protogq"
+Repository = "https://github.com/nicolo/protogq"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/protogq"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/protogq",
+    "README.md",
+    "pyproject.toml",
+]

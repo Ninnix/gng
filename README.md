@@ -1,114 +1,92 @@
-# DuckMind
+# protogq
 
-**Generative AI Templates to Quickly Prototype Applications Using Large Language Models (LLMs) and Real-time Web Search**
-
----
+Groq/OpenAI-compatible prototyping helper with optional browser-backed web access.
 
 ## Overview
 
-DuckMind provides developers with an easy-to-use template for rapidly building AI-driven applications. It seamlessly integrates popular large language models (LLMs) with real-time search capabilities, enabling quick prototyping without complex API setups or manual integration efforts.
+`protogq` keeps one LLM mode: Groq through the OpenAI-compatible API at `https://api.groq.com/openai/v1`.
 
-DuckMind supports two primary LLM APIs:
-
-- [DuckDuckGo ChatAI](https://github.com/deedy5/duckai): Free, no API key required.
-- [GROQ](https://console.groq.com/docs/overview): Requires an API key.
-
-These APIs are unified under a single interface, making it easy to switch between different models. For detailed model information, see:
-
-- [DuckDuckGo ChatAI models](https://github.com/deedy5/duckai?tab=readme-ov-file#1-chat---ai-chat)
-- [GROQ models](https://console.groq.com/docs/models)
-
-Additionally, DuckMind includes built-in real-time web search integration using Google and DuckDuckGo, even for models without native search capabilities.
-
----
+The web helper uses only Python standard-library networking plus a local Chrome/Chromium DevTools connection. It can run Google search pages or visit a URL and extract visible page text without `requests`, BeautifulSoup, or search packages.
 
 ## Features
 
-- **Free and Easy Setup:** Quickly start prototyping without upfront costs (GROQ requires an API key).
-- **Unified LLM Interface:** Easily switch between multiple models like GPT, Llama, and others through a simple, consistent API.
-- **Live Web Search:** Integrate real-time search results into your AI-generated responses.
-- **Modular Design:** Clearly separated AI generation and search functionalities for easy customization.
-
----
+- Groq chat completions through the official `openai` Python client.
+- OpenAI-compatible `base_url`, configurable with `GROQ_BASE_URL`.
+- Optional web context through Chrome DevTools Protocol.
+- Google News RSS fallback when Chrome/CDP is unavailable.
+- Minimal dependencies: only `openai` at runtime.
 
 ## Requirements
 
-- Python 3.12
-- (Optional) [GROQ API Key](https://console.groq.com/docs/overview) if using GROQ. Otherwise, you can utilize the DuckDuckGo ChatAI API without any API keys.
-
----
+- Python 3.13 or newer.
+- A Groq API key in `GROQ_API_KEY`.
+- Chrome or Chromium for full-page web access.
 
 ## Installation
 
-To set up DuckMind, follow the installation instructions provided in [ENV-README.md](ENV-README.md).
+```bash
+uv python install 3.13
+uv venv --python 3.13 protogq
+source protogq/bin/activate
+pip install -e .
+```
 
----
+On Windows:
+
+```powershell
+uv python install 3.13
+uv venv --python 3.13 protogq
+protogq\Scripts\activate
+pip install -e .
+```
 
 ## Quick Start
 
-Run DuckMind with the following command:
+```bash
+export GROQ_API_KEY="your-api-key"
+protogq
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:GROQ_API_KEY = "your-api-key"
+protogq
+```
+
+## Usage
+
+```python
+from protogq import AIGenerator
+
+ai_client = AIGenerator()
+response = ai_client.generate(
+    "News of the day in Italy",
+    model="qwen/qwen3.6-27b",
+    with_web=True,
+    show_thinking=False,
+)
+print(response)
+```
+
+## Web Access
+
+```python
+from protogq import Web
+
+web = Web()
+print(web.google_search("Groq latest models"))
+print(web.visit_page("https://console.groq.com/docs/models"))
+```
+
+Set `PROTOGQ_CHROME` if Chrome or Chromium is not in a standard location:
 
 ```bash
-python main.py
+export PROTOGQ_CHROME="/path/to/chrome"
 ```
 
-This will launch the DuckMind application, enabling immediate interactions with your chosen AI models and integrated web searches.
-
----
-
-## Usage Examples
-
-### DuckDuckGo ChatAI Example:
-
-```python
-from ai_manager import AIGenerator
-
-ai_client = AIGenerator()
-
-response = ai_client.generate_ddg("News of the day in Italy", model="o3-mini", has_search=True)
-print(response)
-```
-
-### GROQ API Example:
-
-Set your GROQ API key as an environment variable named `GROQ_API_KEY`, then use the following snippet:
-
-```python
-from ai_manager import AIGenerator
-
-ai_client = AIGenerator()
-
-response = ai_client.generate("News of the day in Italy", model="qwen-qwq-32b", has_search=True)
-print(response)
-```
-
----
-
-## Contributing
-
-We welcome contributions! To get involved:
-
-- Open an issue to discuss ideas or report bugs.
-- Fork the repository and submit a pull request.
-
-Ensure your contributions are clearly documented and thoroughly tested.
-
----
+If Chrome cannot be reached, `google_search()` falls back to Google News RSS using only Python standard-library networking.
 
 ## License
 
-DuckMind is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Disclaimer
-This library is not affiliated with DuckDuckGo and is for educational purposes only. It is not intended for commercial 
-use or any purpose that violates DuckDuckGo's Terms of Service. By using this library, you acknowledge that you will 
-not use it in a way that infringes on DuckDuckGo's terms. The official DuckDuckGo website can be found 
-at https://duckduckgo.com.
-
----
-
-Special thanks to [DuckDuckGo](https://duckduckgo.com/), [Groq](https://console.groq.com/docs/overview), and [duckduckgo-search by deedy5](https://pypi.org/project/duckduckgo-search/) for their fantastic resources.
-
-Happy prototyping with DuckMind!
+`protogq` is licensed under the MIT License. See [LICENSE](LICENSE).
