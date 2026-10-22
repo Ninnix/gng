@@ -1,5 +1,9 @@
 # Groq Not Grok
 
+<p align="center">
+  <img src="logo.png" alt="Groq Not Grok logo" width="220">
+</p>
+
 A dependency-free Python client for Groq chat completions, image input, and browser-backed web search.
 
 ## Requirements
