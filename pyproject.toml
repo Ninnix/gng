@@ -3,14 +3,14 @@ requires = ["hatchling>=1.18"]
 build-backend = "hatchling.build"
 
 [project]
-name = "protogq"
-version = "0.1.0"
-description = "Groq/OpenAI-compatible prototyping helper with pure Python web access"
+name = "groq-not-grok"
+version = "0.2.0"
+description = "Dependency-free Groq API client with browser-backed web search and vision"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 authors = [
-    { name = "protogq contributors" },
+    { name = "Ninnix" },
 ]
 keywords = [
     "groq", "openai-compatible", "llm", "web", "chrome", "cdp",
@@ -23,26 +23,25 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-dependencies = [
-    "openai>=2.44.0",
-]
-
 [project.scripts]
-protogq = "protogq.main:main"
+groq-not-grok = "groq_not_grok.main:main"
 
 [project.urls]
-Homepage = "https://github.com/nicolo/protogq"
-Repository = "https://github.com/nicolo/protogq"
+Homepage = "https://github.com/Ninnix/groq-not-grok"
+Repository = "https://github.com/Ninnix/groq-not-grok"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/protogq"]
+packages = ["src/groq_not_grok"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "src/protogq",
+    "src/groq_not_grok",
     "README.md",
     "pyproject.toml",
 ]

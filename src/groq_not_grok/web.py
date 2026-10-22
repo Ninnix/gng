@@ -132,10 +132,10 @@ class WebSocket:
 
 class Web:
     def __init__(self, port: int = DEFAULT_PORT, home: str | None = None) -> None:
-        self.port = int(os.getenv("PROTOGQ_CDP_PORT", port))
-        self.host = os.getenv("PROTOGQ_CDP_HOST", "127.0.0.1")
+        self.port = int(os.getenv("GROQ_NOT_GROK_CDP_PORT", port))
+        self.host = os.getenv("GROQ_NOT_GROK_CDP_HOST", "127.0.0.1")
         self.home = Path(home or os.getenv("HOME") or ".")
-        self.profile_dir = self.home / ".protogq" / "browser"
+        self.profile_dir = self.home / ".groq-not-grok" / "browser"
         self.chrome_process: subprocess.Popen | None = None
         self.next_id = 1
 
@@ -144,14 +144,35 @@ class Web:
             raise WebError("google_search requires query")
         url = "https://www.google.com/search?q=" + quote(query)
         try:
-            return self._run_page_js(url, SEARCH_JS, dynamic_scroll=False)
+            result = self._run_page_js(url, SEARCH_JS, dynamic_scroll=False)
+            if result and not self._is_challenge(result):
+                return result
         except (OSError, TimeoutError, WebError, json.JSONDecodeError):
-            return self._google_news_search(query)
+            pass
+        return self._google_news_search(query)
 
     def visit_page(self, url: str) -> str:
         if not url:
             raise WebError("visit_page requires url")
         return self._run_page_js(url, PAGE_JS, dynamic_scroll=True)
+
+    @staticmethod
+    def _is_challenge(text: str) -> bool:
+        lowered = text.lower()
+        return any(phrase in lowered for phrase in (
+            "unusual traffic", "captcha", "not a robot", "automated queries",
+            "sorry/index", "our systems have detected",
+        ))
+
+    def close(self) -> None:
+        process, self.chrome_process = self.chrome_process, None
+        if process is None or process.poll() is not None:
+            return
+        process.terminate()
+        try:
+            process.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            process.kill()
 
     def _google_news_search(self, query: str) -> str:
         url = "https://news.google.com/rss/search?q=" + quote(query, safe="")
@@ -184,8 +205,9 @@ class Web:
     def _run_page_js(self, url: str, js: str, dynamic_scroll: bool) -> str:
         self._ensure_browser()
         target_id, ws_url = self._open_tab("about:blank")
-        ws = WebSocket(ws_url)
+        ws = None
         try:
+            ws = WebSocket(ws_url)
             self._prepare_page(ws)
             self._navigate(ws, url)
             self._wait_navigated_ready(ws)
@@ -197,7 +219,8 @@ class Web:
                 self._scroll_dynamic_page(ws)
             return self._eval_string(ws, js)
         finally:
-            ws.close()
+            if ws is not None:
+                ws.close()
             self._close_tab(target_id)
 
     def _ensure_browser(self) -> None:
@@ -218,12 +241,15 @@ class Web:
         executable = self._chrome_executable()
         if self.host == "127.0.0.1" and self._is_windows_executable(executable):
             self.host = self._wsl_host_ip() or self.host
+        bind_address = os.getenv("GROQ_NOT_GROK_CDP_BIND")
+        if not bind_address:
+            bind_address = "0.0.0.0" if self._is_windows_executable(executable) else self.host
         port_arg = f"--remote-debugging-port={self.port}"
         profile_arg = f"--user-data-dir={self._profile_dir_arg(executable)}"
         args = [
             executable,
             port_arg,
-            "--remote-debugging-address=0.0.0.0",
+            f"--remote-debugging-address={bind_address}",
             "--remote-allow-origins=*",
             profile_arg,
             "--no-first-run",
@@ -242,7 +268,7 @@ class Web:
 
     @staticmethod
     def _chrome_executable() -> str:
-        env = os.getenv("PROTOGQ_CHROME")
+        env = os.getenv("GROQ_NOT_GROK_CHROME")
         if env:
             return env
         candidates = []
@@ -264,13 +290,16 @@ class Web:
             "/usr/bin/google-chrome-stable",
             "/usr/bin/chromium",
             "/usr/bin/chromium-browser",
+            "/usr/bin/brave-browser",
+            "/usr/bin/brave",
             "/snap/bin/chromium",
             "/opt/google/chrome/chrome",
         ])
         for candidate in candidates:
             if Path(candidate).exists():
                 return candidate
-        for name in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser"):
+        for name in ("google-chrome", "google-chrome-stable", "chromium",
+                     "chromium-browser", "brave-browser", "brave"):
             found = shutil.which(name)
             if found:
                 return found
@@ -294,14 +323,14 @@ class Web:
         return ""
 
     def _profile_dir_arg(self, executable: str) -> str:
-        profile = os.getenv("PROTOGQ_CHROME_PROFILE")
+        profile = os.getenv("GROQ_NOT_GROK_CHROME_PROFILE")
         if profile:
             return profile
         if self._is_windows_executable(executable):
             try:
                 temp = subprocess.check_output(["cmd.exe", "/c", "echo %TEMP%"], text=True).strip()
                 if temp:
-                    return temp + "\\protogq-browser"
+                    return temp + "\\groq-not-grok-browser"
             except (OSError, subprocess.SubprocessError):
                 pass
         return str(self.profile_dir)

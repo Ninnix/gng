@@ -1,92 +1,50 @@
-# protogq
+# groq-not-grok
 
-Groq/OpenAI-compatible prototyping helper with optional browser-backed web access.
-
-## Overview
-
-`protogq` keeps one LLM mode: Groq through the OpenAI-compatible API at `https://api.groq.com/openai/v1`.
-
-The web helper uses only Python standard-library networking plus a local Chrome/Chromium DevTools connection. It can run Google search pages or visit a URL and extract visible page text without `requests`, BeautifulSoup, or search packages.
-
-## Features
-
-- Groq chat completions through the official `openai` Python client.
-- OpenAI-compatible `base_url`, configurable with `GROQ_BASE_URL`.
-- Optional web context through Chrome DevTools Protocol.
-- Google News RSS fallback when Chrome/CDP is unavailable.
-- Minimal dependencies: only `openai` at runtime.
+A dependency-free Python client for Groq chat completions, image input, and browser-backed web search.
 
 ## Requirements
 
-- Python 3.13 or newer.
-- A Groq API key in `GROQ_API_KEY`.
-- Chrome or Chromium for full-page web access.
+- Python 3.11 or newer.
+- A Groq API key in `GROQ_API_KEY` or `GROQ_KEY`.
+- Chrome, Chromium, or Brave for browser search and page extraction. Google News RSS is used when Chrome is unavailable or Google presents a challenge.
 
-## Installation
+The package uses only Python's standard library at runtime. `hatchling` is needed only to build a wheel.
 
-```bash
-uv python install 3.13
-uv venv --python 3.13 protogq
-source protogq/bin/activate
-pip install -e .
+## Install
+
+```sh
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
 ```
 
-On Windows:
+On Windows, activate `.venv\\Scripts\\activate` instead.
 
-```powershell
-uv python install 3.13
-uv venv --python 3.13 protogq
-protogq\Scripts\activate
-pip install -e .
-```
-
-## Quick Start
-
-```bash
-export GROQ_API_KEY="your-api-key"
-protogq
-```
-
-On Windows PowerShell:
-
-```powershell
-$env:GROQ_API_KEY = "your-api-key"
-protogq
-```
-
-## Usage
+## Use
 
 ```python
-from protogq import AIGenerator
+from groq_not_grok import AIGenerator
 
-ai_client = AIGenerator()
-response = ai_client.generate(
-    "News of the day in Italy",
-    model="qwen/qwen3.6-27b",
-    with_web=True,
-    show_thinking=False,
-)
-print(response)
+ai = AIGenerator()
+try:
+    print(ai.generate("Explain this result", with_web=True))
+    print(ai.ask_image("Describe the image", "https://example.com/image.jpg"))
+finally:
+    ai.close()
 ```
 
-## Web Access
+The default chat model is `openai/gpt-oss-120b`; image requests use `qwen/qwen3.8-27b` and return JSON. Set `GROQ_MODEL` or `GROQ_VISION_MODEL` to override either default. `GROQ_BASE_URL` changes the API endpoint.
 
-```python
-from protogq import Web
+## Browser settings
 
-web = Web()
-print(web.google_search("Groq latest models"))
-print(web.visit_page("https://console.groq.com/docs/models"))
+Set `GROQ_NOT_GROK_CHROME` when the browser executable is outside a standard location. `GROQ_NOT_GROK_CDP_PORT`, `GROQ_NOT_GROK_CDP_HOST`, and `GROQ_NOT_GROK_CHROME_PROFILE` configure the local DevTools connection and browser profile. `Web.google_search()` visits Google in the browser; `Web.visit_page()` extracts visible content from a URL. Search falls back to Google News RSS when the browser is unavailable or search is challenged.
+
+## Tests
+
+```sh
+PYTHONPATH=src python -m unittest discover -s tests -v
 ```
-
-Set `PROTOGQ_CHROME` if Chrome or Chromium is not in a standard location:
-
-```bash
-export PROTOGQ_CHROME="/path/to/chrome"
-```
-
-If Chrome cannot be reached, `google_search()` falls back to Google News RSS using only Python standard-library networking.
 
 ## License
 
-`protogq` is licensed under the MIT License. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
