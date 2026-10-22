@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from groq_not_grok.web import Web
+from gng.web import Web
 
 
 class WebTests(unittest.TestCase):

@@ -1,4 +1,4 @@
-# groq-not-grok
+# Groq Not Grok
 
 A dependency-free Python client for Groq chat completions, image input, and browser-backed web search.
 
@@ -23,7 +23,7 @@ On Windows, activate `.venv\\Scripts\\activate` instead.
 ## Use
 
 ```python
-from groq_not_grok import AIGenerator
+from gng import AIGenerator
 
 ai = AIGenerator()
 try:

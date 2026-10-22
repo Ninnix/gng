@@ -132,7 +132,7 @@ celerybeat.pid
 .venv
 env/
 venv/
-/protogq/
+/gng/
 ENV/
 env.bak/
 venv.bak/

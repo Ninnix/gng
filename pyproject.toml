@@ -30,18 +30,19 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 [project.scripts]
-groq-not-grok = "groq_not_grok.main:main"
+groq-not-grok = "gng.main:main"
+gng = "gng.main:main"
 
 [project.urls]
-Homepage = "https://github.com/Ninnix/groq-not-grok"
-Repository = "https://github.com/Ninnix/groq-not-grok"
+Homepage = "https://github.com/Ninnix/gng"
+Repository = "https://github.com/Ninnix/gng"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/groq_not_grok"]
+packages = ["src/gng"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "src/groq_not_grok",
+    "src/gng",
     "README.md",
     "pyproject.toml",
 ]
