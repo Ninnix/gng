@@ -86,11 +86,14 @@ class GroqClient:
         except (TypeError, ValueError, OverflowError):
             return 0
 
-    def chat(self, prompt, model=None, role="user", temperature=0.7,
-             max_completion_tokens=8192, response_format=None, reasoning_effort=None):
+    def chat_messages(self, messages, model=None, temperature=0.7,
+                      max_completion_tokens=8192, response_format=None,
+                      reasoning_effort=None):
+        if not isinstance(messages, list) or not messages:
+            raise GroqError("messages must be a nonempty list")
         payload = {
             "model": model or self.model,
-            "messages": [{"role": role, "content": prompt}],
+            "messages": messages,
             "temperature": temperature,
             "max_completion_tokens": max_completion_tokens,
         }
@@ -99,6 +102,17 @@ class GroqClient:
         if reasoning_effort:
             payload["reasoning_effort"] = reasoning_effort
         return self.complete(payload)
+
+    def chat(self, prompt, model=None, role="user", temperature=0.7,
+             max_completion_tokens=8192, response_format=None, reasoning_effort=None):
+        return self.chat_messages(
+            [{"role": role, "content": prompt}],
+            model=model,
+            temperature=temperature,
+            max_completion_tokens=max_completion_tokens,
+            response_format=response_format,
+            reasoning_effort=reasoning_effort,
+        )
 
     def vision(self, prompt, image_url, model=None):
         if not isinstance(image_url, str):

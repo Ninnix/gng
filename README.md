@@ -4,7 +4,7 @@
   <img src="logo.png" alt="Groq Not Grok logo" width="220">
 </p>
 
-A dependency-free Python client for Groq chat completions, image input, and browser-backed web search.
+Use Groq chat completions, image input, and browser-backed web search from Python or the shell. Requires Python 3.11 or later. Runtime dependencies: none.
 
 ## Requirements
 
@@ -12,7 +12,7 @@ A dependency-free Python client for Groq chat completions, image input, and brow
 - A Groq API key in `GROQ_API_KEY` or `GROQ_KEY`.
 - Chrome, Chromium, or Brave for browser search and page extraction. Google News RSS is used when Chrome is unavailable or Google presents a challenge.
 
-The package uses only Python's standard library at runtime. `hatchling` is needed only to build a wheel.
+The package uses only Python's standard library at runtime. `hatchling` is needed to build a wheel.
 
 ## Install
 
@@ -23,6 +23,31 @@ python -m pip install -e .
 ```
 
 On Windows, activate `.venv\\Scripts\\activate` instead.
+
+## CLI
+
+`gng` and `groq-not-grok` start the same prompt. It has a black `🤖` banner, coloured input, plain answers, and a model picker. Set `NO_COLOR=1` or pass `--no-color` to disable colour.
+
+```sh
+gng                              # interactive REPL
+gng "explain this error"         # one-shot
+gng -p "explain this error"      # same as the positional form
+gng -m openai/gpt-oss-20b "hi"   # choose a model
+gng --models                     # free Groq models, offline fallback
+gng --models-all                 # every available Groq model
+gng --web "news of the day"      # search before replying
+gng --image shot.png "describe"  # local image or HTTPS URL
+```
+
+Commands:
+
+- `/models` opens the free-model picker; `/models-all` shows the full catalog.
+- `/model [N|id]` opens the free picker, or switches directly.
+- `/status` shows model, vision model, web and history state.
+- `/web [on|off]` toggles browser-backed web search; **Ctrl+W** does the same.
+- `/history [on|off]`, `/image PATH [text]`, `/read FILE`, `/clear`, `/help`, `/quit`.
+
+The session keeps multi-turn history by default. Aliases are `oss120` (default), `oss` (`gpt-oss-20b`), `qwen`/`vision`, and `allam`. Groq has no separate premium tier, so `/models` and `/models-all` show the same catalog.
 
 ## Use
 

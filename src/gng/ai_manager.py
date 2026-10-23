@@ -13,7 +13,7 @@ class AIGenerator:
 
     def generate(self, prompt, model=None, role="user", temperature=0.7,
                  with_web=False, show_thinking=True, max_completion_tokens=8192,
-                 response_format=None, reasoning_effort=None):
+                 response_format=None, reasoning_effort=None, history=None):
         if not isinstance(prompt, str) or not prompt.strip():
             raise ValueError("prompt must be a non-empty string")
         if with_web:
@@ -23,8 +23,19 @@ class AIGenerator:
             context = self.web.google_search(prompt)
             if context:
                 prompt = f"{prompt}\n\n<web>\n{context}\n</web>"
-        text = self.client.chat(prompt, model, role, temperature,
-                                max_completion_tokens, response_format, reasoning_effort)
+        if history is None:
+            text = self.client.chat(prompt, model, role, temperature,
+                                    max_completion_tokens, response_format, reasoning_effort)
+        else:
+            messages = [*history, {"role": role, "content": prompt}]
+            text = self.client.chat_messages(
+                messages,
+                model=model,
+                temperature=temperature,
+                max_completion_tokens=max_completion_tokens,
+                response_format=response_format,
+                reasoning_effort=reasoning_effort,
+            )
         return text if show_thinking else remove_think_tags(text)
 
     def ask(self, prompt, *, web_search=False):
