@@ -11,7 +11,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, urlencode, urlparse
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 
@@ -151,6 +151,29 @@ class Web:
             pass
         return self._google_news_search(query)
 
+    def google_image_search(self, query: str, limit: int = 30) -> list[dict]:
+        if not query:
+            raise WebError("google_image_search requires query")
+        limit = max(1, min(100, int(limit)))
+        params = urlencode({"tbm": "isch", "q": query, "tbs": "il:cl", "num": limit})
+        page = self._run_page_js(
+            "https://www.google.com/search?" + params,
+            GOOGLE_IMAGES_JS,
+            dynamic_scroll=True,
+        )
+        try:
+            data = json.loads(page)
+        except (TypeError, ValueError) as error:
+            raise WebError("Google Images returned invalid page data") from error
+        if not isinstance(data, dict):
+            raise WebError("Google Images returned invalid page data")
+        if self._is_challenge(data.get("text", "")):
+            raise WebError("Google Images returned a browser challenge")
+        results = data.get("results", [])
+        if not isinstance(results, list):
+            raise WebError("Google Images returned invalid results")
+        return results[:limit]
+
     def visit_page(self, url: str) -> str:
         if not url:
             raise WebError("visit_page requires url")
@@ -248,6 +271,9 @@ class Web:
         profile_arg = f"--user-data-dir={self._profile_dir_arg(executable)}"
         args = [
             executable,
+            "--headless=new",
+            "--disable-gpu",
+            "--disable-dev-shm-usage",
             port_arg,
             f"--remote-debugging-address={bind_address}",
             "--remote-allow-origins=*",
@@ -268,7 +294,7 @@ class Web:
 
     @staticmethod
     def _chrome_executable() -> str:
-        env = os.getenv("GROQ_NOT_GROK_CHROME")
+        env = os.getenv("GROQ_NOT_GROK_CHROME") or os.getenv("CHROMIUM_PATH")
         if env:
             return env
         candidates = []
@@ -482,19 +508,70 @@ class Web:
                 "Connection: close\r\n\r\n"
             ).encode("ascii")
             sock.sendall(request)
-            chunks = []
-            while True:
+            response = bytearray()
+            while b"\r\n\r\n" not in response:
                 chunk = sock.recv(4096)
                 if not chunk:
-                    break
-                chunks.append(chunk)
-        response = b"".join(chunks)
-        head, _, body = response.partition(b"\r\n\r\n")
-        if not body:
-            raise WebError("malformed HTTP response")
-        if b"Transfer-Encoding: chunked" in head or b"transfer-encoding: chunked" in head:
-            body = self._decode_chunked(body)
+                    raise WebError("malformed HTTP response")
+                response.extend(chunk)
+                if len(response) > 8192:
+                    raise WebError("HTTP response headers too large")
+            head, _, body = response.partition(b"\r\n\r\n")
+            headers = {}
+            for line in head.split(b"\r\n")[1:]:
+                name, separator, value = line.partition(b":")
+                if separator:
+                    headers[bytes(name.strip()).lower()] = bytes(value.strip()).lower()
+            if b"chunked" in headers.get(b"transfer-encoding", b""):
+                while not self._chunked_complete(body):
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        raise WebError("incomplete chunked HTTP response")
+                    body.extend(chunk)
+                    if len(body) > MAX_RESULT_BYTES * 4:
+                        raise WebError("HTTP response too large")
+                body = self._decode_chunked(body)
+            elif b"content-length" in headers:
+                try:
+                    length = int(headers[b"content-length"])
+                except ValueError as error:
+                    raise WebError("invalid HTTP content length") from error
+                if length < 0 or length > MAX_RESULT_BYTES * 4:
+                    raise WebError("HTTP response too large")
+                while len(body) < length:
+                    chunk = sock.recv(min(4096, length - len(body)))
+                    if not chunk:
+                        raise WebError("incomplete HTTP response")
+                    body.extend(chunk)
+                body = body[:length]
+            else:
+                while True:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    body.extend(chunk)
+                    if len(body) > MAX_RESULT_BYTES * 4:
+                        raise WebError("HTTP response too large")
         return body.decode("utf-8", "replace")
+
+    @staticmethod
+    def _chunked_complete(body: bytes | bytearray) -> bool:
+        pos = 0
+        while True:
+            end = body.find(b"\r\n", pos)
+            if end == -1:
+                return False
+            size_text = body[pos:end].split(b";", 1)[0]
+            try:
+                size = int(size_text, 16)
+            except ValueError:
+                raise WebError("invalid chunked HTTP response") from None
+            pos = end + 2
+            if size == 0:
+                return body[pos:pos + 2] == b"\r\n" or body.find(b"\r\n\r\n", pos) != -1
+            if len(body) < pos + size + 2:
+                return False
+            pos += size + 2
 
     @staticmethod
     def _decode_chunked(body: bytes) -> bytes:
@@ -525,6 +602,33 @@ const els=[...document.querySelectorAll('button,[role=button],input[type=submit]
 for (const el of els){const t=clean(el.innerText||el.value||el.textContent);
 if(!t)continue; if(pats.some(p=>p.test(t))){el.click(); return 'clicked '+t;}}
 return '';
+})()
+""".strip()
+
+GOOGLE_IMAGES_JS = r"""
+(() => {
+const results=[],seen=new Set();
+for(const a of document.querySelectorAll('a[href]')){
+  const img=a.querySelector('img');
+  if(!img)continue;
+  let image=img.getAttribute('data-ou')||img.getAttribute('data-src')||'';
+  let source=img.getAttribute('data-lpage')||'';
+  let target;
+  try{target=new URL(a.href);}catch{continue;}
+  if(target.pathname.endsWith('/imgres')){
+    image=image||target.searchParams.get('imgurl')||'';
+    source=source||target.searchParams.get('imgrefurl')||'';
+  }
+  if(!image||!source||seen.has(image))continue;
+  try{if(!/^https?:$/.test(new URL(image).protocol)||!/^https?:$/.test(new URL(source).protocol))continue;}catch{continue;}
+  seen.add(image);
+  results.push({url:image,source,description:img.alt||a.innerText||'',
+    width:Number(img.getAttribute('data-ow')||img.getAttribute('width')||img.naturalWidth||0),
+    height:Number(img.getAttribute('data-oh')||img.getAttribute('height')||img.naturalHeight||0),
+    engine:'Google Images'});
+  if(results.length>=100)break;
+}
+return JSON.stringify({url:location.href,text:(document.body&&document.body.innerText||'').slice(0,1500),results});
 })()
 """.strip()
 

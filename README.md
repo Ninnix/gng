@@ -66,7 +66,7 @@ The default chat model is `openai/gpt-oss-120b`; image requests use `qwen/qwen3.
 
 ## Browser settings
 
-Set `GROQ_NOT_GROK_CHROME` when the browser executable is outside a standard location. `GROQ_NOT_GROK_CDP_PORT`, `GROQ_NOT_GROK_CDP_HOST`, and `GROQ_NOT_GROK_CHROME_PROFILE` configure the local DevTools connection and browser profile. `Web.google_search()` visits Google in the browser; `Web.visit_page()` extracts visible content from a URL. Search falls back to Google News RSS when the browser is unavailable or search is challenged.
+Set `GROQ_NOT_GROK_CHROME` when the browser executable is outside a standard location. `GROQ_NOT_GROK_CDP_PORT`, `GROQ_NOT_GROK_CDP_HOST`, and `GROQ_NOT_GROK_CHROME_PROFILE` configure the local DevTools connection and browser profile. `Web.google_search()` visits Google in the browser; `Web.google_image_search()` extracts image URLs and source pages from the rendered Google Images DOM with JavaScript; `Web.visit_page()` extracts visible content from a URL. Text search falls back to Google News RSS when the browser is unavailable or search is challenged.
 
 ## Tests
 
